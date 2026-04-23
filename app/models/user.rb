@@ -1,8 +1,9 @@
 class User < ApplicationRecord
   devise :database_authenticatable, :registerable,
          :recoverable, :validatable,
-         :omniauthable, omniauth_providers: %i[google_oauth2 apple],
-         :jwt_authenticatable, jwt_revocation_strategy: JwtDenylist
+         :omniauthable, :jwt_authenticatable,
+         omniauth_providers: %i[google_oauth2 apple],
+         jwt_revocation_strategy: JwtDenylist
 
   has_many :space_memberships, dependent: :destroy
   has_many :spaces, through: :space_memberships
