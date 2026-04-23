@@ -1,3 +1,5 @@
+require 'devise/orm/active_record'
+
 Devise.setup do |config|
   config.mailer_sender = "noreply@boxyn.com"
   config.case_insensitive_keys = [:email]
@@ -13,6 +15,10 @@ Devise.setup do |config|
   config.responder.error_status = :unprocessable_entity
   config.responder.redirect_status = :see_other
 
+  # Pure JSON API — no navigational formats means Devise never attempts
+  # to set flash messages, avoiding the flash/session errors in API mode
+  config.navigational_formats = []
+
   config.jwt do |jwt|
     jwt.secret = ENV.fetch("DEVISE_JWT_SECRET_KEY", Rails.application.secret_key_base)
     jwt.dispatch_requests = [
@@ -23,6 +29,10 @@ Devise.setup do |config|
     ]
     jwt.expiration_time = 1.day.to_i
   end
+
+  # Mount OmniAuth at /auth/oauth/* so it doesn't clash with
+  # Devise's own /auth/sign_in and /auth/sign_up routes
+  config.omniauth_path_prefix = '/auth/oauth'
 
   config.omniauth :google_oauth2,
     ENV.fetch("GOOGLE_CLIENT_ID", ""),

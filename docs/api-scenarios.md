@@ -86,7 +86,7 @@ Authorization: Bearer <token>
 Initiates the OAuth flow. The user is redirected to Google.
 
 ```
-GET /auth/users/auth/google_oauth2
+GET /auth/oauth/google_oauth2
 ```
 
 After Google redirects back, the callback creates or finds the user and returns a JWT.
@@ -108,7 +108,7 @@ After Google redirects back, the callback creates or finds the user and returns 
 Same flow as Google, using Apple's OAuth provider.
 
 ```
-GET /auth/users/auth/apple
+GET /auth/oauth/apple
 ```
 
 ---

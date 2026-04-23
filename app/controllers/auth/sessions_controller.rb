@@ -7,7 +7,7 @@ class Auth::SessionsController < Devise::SessionsController
     render json: UserBlueprint.render(resource), status: :ok
   end
 
-  def respond_to_on_destroy
+  def respond_to_on_destroy(*)
     head :no_content
   end
 end

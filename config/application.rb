@@ -29,5 +29,10 @@ module Boxyn
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
     config.active_job.queue_adapter = :solid_queue
+
+    # Devise requires these middleware even in API-only mode
+    config.middleware.use ActionDispatch::Cookies
+    config.middleware.use ActionDispatch::Session::CookieStore, key: '_boxyn_session'
+    config.middleware.use ActionDispatch::Flash
   end
 end
