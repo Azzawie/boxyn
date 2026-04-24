@@ -3,6 +3,8 @@ class Api::V1::BaseController < ApplicationController
   before_action :authenticate_user!
   include SpaceAuthorization
 
+  rescue_from ActiveRecord::RecordNotFound, with: :not_found
+
   private
 
   # Explicitly require an Authorization header so that session cookies
@@ -13,11 +15,12 @@ class Api::V1::BaseController < ApplicationController
     render json: { error: 'Unauthorized' }, status: :unauthorized
   end
 
-  def url_helpers
-    Rails.application.routes.url_helpers
-  end
 
   def render_error(message, status = :unprocessable_entity)
     render json: { error: message }, status: status
+  end
+
+  def not_found
+    render json: { error: "Resource not found" }, status: :not_found
   end
 end

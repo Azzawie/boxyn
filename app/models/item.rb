@@ -8,6 +8,7 @@ class Item < ApplicationRecord
 
   scope :search, ->(query) {
     where("search_vector @@ plainto_tsquery('english', ?)", query)
-      .order(Arel.sql("ts_rank(search_vector, plainto_tsquery('english', #{connection.quote(query)})) DESC"))
+      .select("items.*, ts_rank(search_vector, plainto_tsquery('english', ?)) AS rank", query)
+      .order("rank DESC")
   }
 end

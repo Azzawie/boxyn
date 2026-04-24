@@ -2,6 +2,10 @@ module SpaceAuthorization
   extend ActiveSupport::Concern
 
   def find_space
+    # If @space is already loaded (e.g., from set_box), use it
+    return if @space.present?
+
+    # Otherwise, find it from params
     @space = Space.find(params[:space_id] || params[:id])
   end
 
@@ -11,18 +15,18 @@ module SpaceAuthorization
 
   def require_membership!
     find_space
-    render json: { error: "Forbidden" }, status: :forbidden unless current_membership
+    render(json: { error: "Forbidden" }, status: :forbidden) and return unless current_membership
   end
 
   def require_admin!
     find_space
     unless current_membership&.admin? || current_membership&.owner?
-      render json: { error: "Forbidden" }, status: :forbidden
+      render(json: { error: "Forbidden" }, status: :forbidden) and return
     end
   end
 
   def require_owner!
     find_space
-    render json: { error: "Forbidden" }, status: :forbidden unless current_membership&.owner?
+    render(json: { error: "Forbidden" }, status: :forbidden) and return unless current_membership&.owner?
   end
 end

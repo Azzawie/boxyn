@@ -34,14 +34,21 @@ Devise.setup do |config|
   # Devise's own /auth/sign_in and /auth/sign_up routes
   config.omniauth_path_prefix = '/auth/oauth'
 
-  config.omniauth :google_oauth2,
-    ENV.fetch("GOOGLE_CLIENT_ID", ""),
-    ENV.fetch("GOOGLE_CLIENT_SECRET", ""),
-    scope: "email,profile"
+  # Google OAuth - only mount if credentials are present
+  if ENV["GOOGLE_CLIENT_ID"].present? && ENV["GOOGLE_CLIENT_SECRET"].present?
+    config.omniauth :google_oauth2,
+      ENV.fetch("GOOGLE_CLIENT_ID"),
+      ENV.fetch("GOOGLE_CLIENT_SECRET"),
+      scope: "email,profile"
+  end
 
-  config.omniauth :apple,
-    ENV.fetch("APPLE_TEAM_ID", ""),
-    ENV.fetch("APPLE_CLIENT_ID", ""),
-    key_id: ENV.fetch("APPLE_KEY_ID", ""),
-    pem: ENV.fetch("APPLE_PRIVATE_KEY", "").gsub("\\n", "\n")
+  # Apple OAuth - only mount if credentials are present
+  if ENV["APPLE_TEAM_ID"].present? && ENV["APPLE_CLIENT_ID"].present? &&
+     ENV["APPLE_KEY_ID"].present? && ENV["APPLE_PRIVATE_KEY"].present?
+    config.omniauth :apple,
+      ENV.fetch("APPLE_TEAM_ID"),
+      ENV.fetch("APPLE_CLIENT_ID"),
+      key_id: ENV.fetch("APPLE_KEY_ID"),
+      pem: ENV.fetch("APPLE_PRIVATE_KEY").gsub("\\n", "\n")
+  end
 end

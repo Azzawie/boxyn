@@ -4,7 +4,9 @@ class Api::V1::SpaceMembershipsController < Api::V1::BaseController
   def create
     require_admin!
     return if performed?
-    invited = User.find_by!(email: params[:email])
+    invited = User.find_by(email: params[:email])
+    return render_error("User not found", :not_found) unless invited
+
     membership = SpaceMembership.new(user: invited, space: @space, role: params[:role] || :member)
     if membership.save
       render json: { message: "Invitation sent" }, status: :created

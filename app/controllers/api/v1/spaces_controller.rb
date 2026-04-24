@@ -9,7 +9,9 @@ class Api::V1::SpacesController < Api::V1::BaseController
   def show
     require_membership!
     return if performed?
-    render json: SpaceBlueprint.render(@space, view: :with_boxes)
+    # Eager-load boxes and their QR code image attachments to avoid N+1
+    @space = Space.includes(boxes: { qr_code_image_attachment: :blob }).find(@space.id)
+    render json: SpaceBlueprint.render(@space, view: :with_boxes, url_helpers: url_helpers)
   end
 
   def create

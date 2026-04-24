@@ -121,35 +121,50 @@ docs/history.md                                          created (this file)
 
 ### Pending — To Run Locally
 
-The sandbox environment runs Ruby 3.0 and has no network access, so the following commands were not executed and need to be run on your local machine:
+The following commands need to be run on your local machine. **All steps are required** — skipping the Active Storage or Solid Queue installs will cause 500 errors when creating boxes.
 
 ```bash
 # 1. Install gems
 bundle install
 
-# 2. Generate a JWT secret and paste into .env
-bin/rails secret   # → paste output as DEVISE_JWT_SECRET_KEY in .env
+# 2. Generate a JWT secret and paste into .env as DEVISE_JWT_SECRET_KEY
+bin/rails secret
 
-# 3. Create DB and run all migrations
-bin/rails db:create db:migrate
+# 3. Create the databases
+#    If rake db:create fails with "postgres database does not exist", run instead:
+#      createdb boxyn_development && createdb boxyn_test
+bin/rails db:create
 
-# 4. Run the test suite
-bin/rails test
+# 4. Install Active Storage migrations (needed for QR code image + photo attachments)
+bin/rails active_storage:install
 
-# 5. Boot the server
+# 5. Install Solid Queue migrations (needed for background job processing)
+#    Without this, creating a box will raise a 500 error (solid_queue_jobs table missing)
+bin/rails solid_queue:install
+
+# 6. Run all migrations (app + Active Storage + Solid Queue)
+bin/rails db:migrate
+
+# 7. Prepare the test database
+bin/rails db:test:prepare
+
+# 8. Boot the server
 bin/rails server
 # → visit http://localhost:3000/up to confirm it's running
 
-# 6. Security checks
+# 9. Run the RSpec test suite
+bundle exec rspec
+
+# 10. Security checks
 bundle exec brakeman --no-pager
 bundle exec bundler-audit check --update
-
-# 7. Push to GitHub
-git remote add origin git@github.com:Azzawie/boxyn.git
-git add .
-git commit -m "feat: initial Boxyn API implementation"
-git push -u origin main
 ```
+
+**Notes learned during setup:**
+- Ruby 3.3.0 has a syntax incompatibility with Rails 8.1.3 ActionView. Use Ruby **3.3.8** (run `rvm install 3.3.8 && rvm use 3.3.8 --default`).
+- `active_storage:install` and `solid_queue:install` must be run **before** `db:migrate` — they are not automatic even in Rails 8.1.
+- OmniAuth path prefix is set to `/auth/oauth` to avoid collision with Devise's `/auth/sign_in` and `/auth/sign_up` routes.
+- Session/cookie/flash middleware is added back to API-only mode to support Devise + OmniAuth.
 
 ---
 

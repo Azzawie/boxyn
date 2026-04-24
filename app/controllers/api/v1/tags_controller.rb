@@ -1,5 +1,6 @@
 class Api::V1::TagsController < Api::V1::BaseController
-  before_action :set_space
+  before_action :set_space,  only: [:index, :create]
+  before_action :set_tag,    only: [:update, :destroy]
 
   def index
     require_membership!
@@ -18,10 +19,32 @@ class Api::V1::TagsController < Api::V1::BaseController
     end
   end
 
+  def update
+    require_membership!
+    return if performed?
+    if @tag.update(tag_params)
+      render json: TagBlueprint.render(@tag)
+    else
+      render_error(@tag.errors.full_messages.join(", "))
+    end
+  end
+
+  def destroy
+    require_membership!
+    return if performed?
+    @tag.destroy
+    head :no_content
+  end
+
   private
 
   def set_space
     @space = Space.find(params[:space_id])
+  end
+
+  def set_tag
+    @tag   = Tag.find(params[:id])
+    @space = @tag.space
   end
 
   def tag_params

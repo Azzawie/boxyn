@@ -1,0 +1,677 @@
+{
+  "info": {
+    "name": "Boxyn API",
+    "description": "Boxyn — Smart Storage Management API. All authenticated requests require the Authorization: Bearer {{token}} header. Sign in first, then copy the token from the Authorization response header into the token variable.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token — copied from the Authorization response header after sign-in or sign-up"
+    },
+    {
+      "key": "space_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "box_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "item_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "tag_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "membership_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "qr_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Sign Up",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const auth = pm.response.headers.get('Authorization');",
+                  "if (auth) {",
+                  "  pm.collectionVariables.set('token', auth.replace('Bearer ', ''));",
+                  "  console.log('Token saved from sign-up');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"email\": \"mustafa@example.com\",\n    \"password\": \"securepassword\",\n    \"password_confirmation\": \"securepassword\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/sign_up",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "sign_up"]
+            },
+            "description": "Creates a new account. A Personal space is automatically created for the user. The JWT token is returned in the Authorization response header."
+          }
+        },
+        {
+          "name": "Sign In",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const auth = pm.response.headers.get('Authorization');",
+                  "if (auth) {",
+                  "  pm.collectionVariables.set('token', auth.replace('Bearer ', ''));",
+                  "  console.log('Token saved from sign-in');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"email\": \"mustafa@example.com\",\n    \"password\": \"securepassword\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/sign_in",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "sign_in"]
+            },
+            "description": "Signs in and returns a JWT in the Authorization response header. The test script auto-saves it to the token variable."
+          }
+        },
+        {
+          "name": "Sign Out",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/sign_out",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "sign_out"]
+            },
+            "description": "Invalidates the current JWT token by adding it to the denylist."
+          }
+        },
+        {
+          "name": "Sign In with Google (OAuth)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/oauth/google_oauth2",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "oauth", "google_oauth2"]
+            },
+            "description": "Initiates the Google OAuth flow. Opens in a browser — redirects to Google for authentication."
+          }
+        },
+        {
+          "name": "Sign In with Apple (OAuth)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/oauth/apple",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "oauth", "apple"]
+            },
+            "description": "Initiates the Apple OAuth flow. Opens in a browser — redirects to Apple for authentication."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Spaces",
+      "item": [
+        {
+          "name": "List My Spaces",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/spaces",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "spaces"]
+            },
+            "description": "Returns all spaces the authenticated user is a member of."
+          }
+        },
+        {
+          "name": "Get Space (with Boxes)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/spaces/{{space_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "spaces", "{{space_id}}"]
+            },
+            "description": "Returns a single space with all its boxes nested inside."
+          }
+        },
+        {
+          "name": "Create Space",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('space_id', body.id);",
+                  "  console.log('space_id set to', body.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"space\": {\n    \"name\": \"Garage\",\n    \"description\": \"Winter sports gear and tools\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/spaces",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "spaces"]
+            },
+            "description": "Creates a new space. The authenticated user is automatically made the owner."
+          }
+        },
+        {
+          "name": "Update Space",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"space\": {\n    \"description\": \"Updated description\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/spaces/{{space_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "spaces", "{{space_id}}"]
+            },
+            "description": "Updates a space. Requires admin or owner role."
+          }
+        },
+        {
+          "name": "Delete Space",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/spaces/{{space_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "spaces", "{{space_id}}"]
+            },
+            "description": "Deletes a space. Requires owner role."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Space Memberships",
+      "item": [
+        {
+          "name": "Invite Member",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"friend@example.com\",\n  \"role\": \"member\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/spaces/{{space_id}}/memberships",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "spaces", "{{space_id}}", "memberships"]
+            },
+            "description": "Invites a user by email. Role can be member, admin, or owner. Requires admin or owner role."
+          }
+        },
+        {
+          "name": "Remove Member",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/spaces/{{space_id}}/memberships/{{membership_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "spaces", "{{space_id}}", "memberships", "{{membership_id}}"]
+            },
+            "description": "Removes a member from a space. Cannot remove the owner. Requires admin or owner role."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Boxes",
+      "item": [
+        {
+          "name": "List Boxes in Space",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/spaces/{{space_id}}/boxes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "spaces", "{{space_id}}", "boxes"]
+            },
+            "description": "Returns all boxes in the given space."
+          }
+        },
+        {
+          "name": "Create Box",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('box_id', body.id);",
+                  "  pm.collectionVariables.set('qr_token', body.qr_token);",
+                  "  console.log('box_id set to', body.id, '| qr_token set to', body.qr_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"box\": {\n    \"name\": \"Winter Clothes\",\n    \"description\": \"Jackets, scarves, gloves\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/spaces/{{space_id}}/boxes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "spaces", "{{space_id}}", "boxes"]
+            },
+            "description": "Creates a box. A UUID qr_token is auto-generated and a QR code image is generated asynchronously."
+          }
+        },
+        {
+          "name": "Get Box (with Items)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/boxes/{{box_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "boxes", "{{box_id}}"]
+            },
+            "description": "Returns a box with all its items and their tags."
+          }
+        },
+        {
+          "name": "Scan Box by QR Token",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/boxes/scan/{{qr_token}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "boxes", "scan", "{{qr_token}}"]
+            },
+            "description": "Looks up a box by its QR token and returns it with all items. Used when scanning a physical QR code."
+          }
+        },
+        {
+          "name": "Update Box",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"box\": {\n    \"name\": \"Winter Clothes 2024\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/boxes/{{box_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "boxes", "{{box_id}}"]
+            },
+            "description": "Updates a box name or description."
+          }
+        },
+        {
+          "name": "Delete Box",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/boxes/{{box_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "boxes", "{{box_id}}"]
+            },
+            "description": "Deletes a box and all its items."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Items",
+      "item": [
+        {
+          "name": "List Items in Box",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/boxes/{{box_id}}/items",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "boxes", "{{box_id}}", "items"]
+            },
+            "description": "Returns all items in a box with their tags. Requires membership in the box's space."
+          }
+        },
+        {
+          "name": "Get Item",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/items/{{item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "items", "{{item_id}}"]
+            },
+            "description": "Returns full item details including tags and signed photo URLs. Uses the 'full' blueprint view."
+          }
+        },
+        {
+          "name": "Create Item (with photos + tags)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('item_id', body.id);",
+                  "  console.log('item_id set to', body.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "item[name]", "value": "Blue Jacket", "type": "text" },
+                { "key": "item[description]", "value": "Size M, North Face", "type": "text" },
+                { "key": "item[photos][]", "type": "file", "src": "", "description": "Optional — attach one or more photos" },
+                { "key": "item[tag_ids][]", "value": "{{tag_id}}", "type": "text", "description": "Optional — must belong to same space as box" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/boxes/{{box_id}}/items",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "boxes", "{{box_id}}", "items"]
+            },
+            "description": "Creates an item. Always use multipart/form-data so photos can be uploaded in the same request. Tags are optional but must belong to the same space as the box — invalid tag IDs return 422."
+          }
+        },
+        {
+          "name": "Update Item (name + tags, JSON)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item\": {\n    \"name\": \"Blue Jacket (updated)\",\n    \"tag_ids\": []\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/items/{{item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "items", "{{item_id}}"]
+            },
+            "description": "Updates name/description/tags via JSON. tag_ids behaviour: omit key = keep existing tags, empty array = clear all tags, array with values = replace with this exact set."
+          }
+        },
+        {
+          "name": "Update Item (add photos, multipart)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "item[photos][]", "type": "file", "src": "", "description": "Adds new photos to the item" },
+                { "key": "item[tag_ids][]", "value": "{{tag_id}}", "type": "text", "description": "Optional — replaces tags" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/items/{{item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "items", "{{item_id}}"]
+            },
+            "description": "Use multipart/form-data when adding new photo attachments to an existing item."
+          }
+        },
+        {
+          "name": "Delete Item",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/items/{{item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "items", "{{item_id}}"]
+            },
+            "description": "Deletes an item and all its taggings. Photos (Active Storage attachments) are also purged."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tags",
+      "item": [
+        {
+          "name": "List Tags in Space",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/spaces/{{space_id}}/tags",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "spaces", "{{space_id}}", "tags"]
+            },
+            "description": "Returns all tags scoped to the given space."
+          }
+        },
+        {
+          "name": "Create Tag",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('tag_id', body.id);",
+                  "  console.log('tag_id set to', body.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tag\": {\n    \"name\": \"fragile\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/spaces/{{space_id}}/tags",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "spaces", "{{space_id}}", "tags"]
+            },
+            "description": "Creates a tag scoped to the space. Tag names are unique per space (case-insensitive)."
+          }
+        },
+        {
+          "name": "Update Tag",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tag\": {\n    \"name\": \"handle-with-care\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/tags/{{tag_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "tags", "{{tag_id}}"]
+            },
+            "description": "Renames a tag. The new name must be unique within its space. Requires membership in the tag's space."
+          }
+        },
+        {
+          "name": "Delete Tag",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/tags/{{tag_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "tags", "{{tag_id}}"]
+            },
+            "description": "Deletes the tag and removes it from all items it was applied to (taggings are destroyed via cascade)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "item": [
+        {
+          "name": "Search Items",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/search?q=jacket&space_id={{space_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "search"],
+              "query": [
+                { "key": "q", "value": "jacket", "description": "Search query" },
+                { "key": "space_id", "value": "{{space_id}}", "description": "Scope search to this space" }
+              ]
+            },
+            "description": "Full-text search across item names and descriptions within a space. Results ranked by relevance using PostgreSQL tsvector."
+          }
+        }
+      ]
+    }
+  ]
+}

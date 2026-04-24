@@ -20,7 +20,9 @@ class User < ApplicationRecord
   private
 
   def create_personal_space
-    space = Space.create!(name: "Personal")
-    SpaceMembership.create!(user: self, space: space, role: :owner)
+    ActiveRecord::Base.transaction do
+      space = Space.create!(name: "Personal")
+      SpaceMembership.create!(user: self, space: space, role: :owner)
+    end
   end
 end

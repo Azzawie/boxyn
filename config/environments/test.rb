@@ -6,6 +6,10 @@
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
+  # Use test adapter in the test environment — jobs are enqueued but not executed
+  # unless explicitly called with perform_now or have_enqueued_job matcher.
+  config.active_job.queue_adapter = :test
+
   # While tests run files are not watched, reloading is not necessary.
   config.enable_reloading = false
 

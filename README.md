@@ -22,7 +22,7 @@ Boxyn is a JSON API for smart physical storage management. Users organize real-w
 
 | Layer | Technology | Version |
 |---|---|---|
-| Language | Ruby | 3.3.0 |
+| Language | Ruby | 3.3.8 |
 | Framework | Ruby on Rails (API mode) | 8.1.x |
 | Database | PostgreSQL | 14+ |
 | Authentication | Devise + devise-jwt | latest |
@@ -30,7 +30,7 @@ Boxyn is a JSON API for smart physical storage management. Users organize real-w
 | Serialization | Blueprinter | latest |
 | QR Code Generation | rqrcode | latest |
 | File Uploads | Active Storage (built-in) | — |
-| Background Jobs | Solid Queue (built-in) | — |
+| Background Jobs | Solid Queue (production) / Async (development) | — |
 | Caching | Solid Cache (built-in) | — |
 | Web Server | Puma | 5+ |
 | CORS | rack-cors | latest |
@@ -50,15 +50,20 @@ app/
 ├── jobs/              # GenerateQrCodeJob (async QR PNG generation)
 ├── models/            # All ActiveRecord models
 config/
+├── environments/
+│   ├── development.rb # Uses :async queue adapter (no DB tables needed)
+│   └── test.rb        # Uses :test queue adapter (jobs enqueued but not run)
 ├── initializers/
 │   ├── devise.rb      # JWT config, OAuth providers
 │   └── cors.rb        # CORS with Authorization header exposure
 ├── routes.rb          # All routes under /auth/* and /api/v1/*
 db/
-└── migrate/           # 9 migrations covering all models + FTS trigger
+├── migrate/           # App migrations covering all models + FTS trigger
+└── queue_schema.rb    # Solid Queue schema (used in production queue database)
 docs/
-├── history.md         # Full session history and architecture decisions
-└── api-scenarios.md   # All API endpoints with example requests/responses
+├── history.md              # Full session history and architecture decisions
+├── api-scenarios.md        # All API endpoints with example requests/responses
+└── boxyn-postman-collection.json  # Ready-to-import Postman collection
 ```
 
 ---
@@ -67,9 +72,11 @@ docs/
 
 ### Prerequisites
 
-- Ruby 3.3.0
+- Ruby 3.3.8 (install via RVM: `rvm install 3.3.8 && rvm use 3.3.8 --default`)
 - PostgreSQL 14+
 - Bundler
+
+> **Note:** Ruby 3.3.0 has a known incompatibility with Rails 8.1.3. Use 3.3.8 or later.
 
 ### Setup
 
@@ -77,13 +84,31 @@ docs/
 # 1. Install dependencies
 bundle install
 
-# 2. Set up environment variables
-cp .env.example .env   # then fill in the values (see Environment Variables below)
+# 2. Copy and fill in environment variables
+cp .env.example .env
+# Then edit .env — see the Environment Variables section below
 
-# 3. Create and migrate the database
-bin/rails db:create db:migrate
+# 3. Generate a JWT secret and paste it into .env as DEVISE_JWT_SECRET_KEY
+bin/rails secret
 
-# 4. Start the server
+# 4. Create the database
+#    If this fails with "database postgres does not exist", create manually:
+#      createdb boxyn_development && createdb boxyn_test
+bin/rails db:create
+
+# 5. Install Active Storage migrations
+#    Required for QR code image and photo attachments on boxes/items
+bin/rails active_storage:install
+
+# 6. Install Solid Queue migrations
+#    Required for production background job processing.
+#    Note: in development, the :async adapter is used instead (no DB tables needed).
+bin/rails solid_queue:install
+
+# 7. Run all migrations
+bin/rails db:migrate
+
+# 8. Start the server
 bin/rails server
 ```
 
@@ -93,7 +118,7 @@ Visit `http://localhost:3000/up` — a `200 OK` means the app is running.
 
 ## Environment Variables
 
-Create a `.env` file in the project root (never commit this file):
+Create a `.env` file in the project root (this file is gitignored — never commit it):
 
 ```
 DATABASE_URL=postgresql://localhost/boxyn_development
@@ -136,16 +161,24 @@ All endpoints are under `/api/v1/`. Authentication uses a JWT token passed in th
 | `GET` | `/api/v1/search?q=...&space_id=...` | Full-text search items |
 
 See [`docs/api-scenarios.md`](docs/api-scenarios.md) for full request/response examples.
+A ready-to-import Postman collection is available at [`docs/boxyn-postman-collection.json`](docs/boxyn-postman-collection.json).
 
 ---
 
 ## Running Tests
 
 ```bash
-bin/rails test
+# Make sure the test database is up to date
+bin/rails db:test:prepare
+
+# Run the full RSpec suite
+bundle exec rspec
+
+# Run a single spec file
+bundle exec rspec spec/requests/spaces_spec.rb
 ```
 
-Tests cover models, all API controllers, and the QR code job.
+Tests cover all API controllers (auth, spaces, memberships, boxes, items, tags, search) and the QR code job.
 
 ---
 
@@ -163,9 +196,15 @@ bundle exec bundler-audit check --update
 
 ## Background Jobs
 
-QR code generation runs asynchronously via **Solid Queue**. When a box is created, `GenerateQrCodeJob` is enqueued automatically. It renders a 300×300 PNG using `rqrcode` and attaches it to the box via Active Storage.
+QR code generation runs asynchronously via `GenerateQrCodeJob`. When a box is created, the job is enqueued automatically. It renders a 300×300 PNG using `rqrcode` and attaches it to the box via Active Storage.
 
-To process jobs in development:
+| Environment | Queue adapter | Behaviour |
+|---|---|---|
+| `development` | `:async` | Jobs run in a background thread — no database tables needed |
+| `test` | `:test` | Jobs are enqueued but not executed; assert with `have_enqueued_job` |
+| `production` | `:solid_queue` | Persistent database-backed queue; requires dedicated queue database |
+
+To process jobs in production (or if you switch to Solid Queue locally):
 
 ```bash
 bin/jobs   # starts the Solid Queue worker

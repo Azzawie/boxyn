@@ -19,8 +19,11 @@ class ItemBlueprint < Blueprinter::Base
 
   view :full do
     association :tags, blueprint: TagBlueprint
-    field :photo_urls do |item, options|
-      item.photos.map { |photo| options[:url_helpers].rails_blob_url(photo) }
+    field :photo_urls do |item|
+      host = ENV.fetch('APP_BASE_URL', 'http://localhost:3000')
+      item.photos.map do |photo|
+        Rails.application.routes.url_helpers.rails_blob_url(photo, host: host)
+      end
     end
   end
 end

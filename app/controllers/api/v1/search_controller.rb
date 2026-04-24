@@ -12,7 +12,7 @@ class Api::V1::SearchController < Api::V1::BaseController
     items = Item.joins(:box)
                 .where(boxes: { space_id: space.id })
                 .search(params[:q])
-                .includes(:tags)
+                .includes(:tags, box: :space)
 
     render json: ItemBlueprint.render(items, view: :with_box)
   end

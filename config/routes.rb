@@ -22,13 +22,14 @@ Rails.application.routes.draw do
       end
 
       resources :boxes, only: [:show, :update, :destroy] do
-        resources :items, only: [:create]
+        resources :items, only: [:index, :create]
         collection do
           get "scan/:qr_token", to: "boxes#scan", as: :scan
         end
       end
 
-      resources :items, only: [:update, :destroy]
+      resources :items, only: [:show, :update, :destroy]
+      resources :tags,  only: [:update, :destroy]
 
       get "search", to: "search#index"
     end

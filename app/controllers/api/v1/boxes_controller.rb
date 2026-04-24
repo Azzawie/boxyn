@@ -20,21 +20,21 @@ class Api::V1::BoxesController < Api::V1::BaseController
   end
 
   def show
-    authorize_box_access!
+    require_membership!
     return if performed?
-    render json: BoxBlueprint.render(@box, view: :with_items, url_helpers: url_helpers)
+    render json: BoxBlueprint.render(@box, view: :with_items)
   end
 
   def scan
-    @box = Box.find_by!(qr_token: params[:qr_token])
+    @box = Box.find_by(qr_token: params[:qr_token])
     @space = @box.space
-    authorize_box_access!
+    require_membership!
     return if performed?
-    render json: BoxBlueprint.render(@box, view: :with_items, url_helpers: url_helpers)
+    render json: BoxBlueprint.render(@box, view: :with_items)
   end
 
   def update
-    authorize_box_access!
+    require_membership!
     return if performed?
     if @box.update(box_params)
       render json: BoxBlueprint.render(@box)
@@ -44,7 +44,7 @@ class Api::V1::BoxesController < Api::V1::BaseController
   end
 
   def destroy
-    authorize_box_access!
+    require_membership!
     return if performed?
     @box.destroy
     head :no_content
@@ -63,10 +63,5 @@ class Api::V1::BoxesController < Api::V1::BaseController
 
   def box_params
     params.require(:box).permit(:name, :description)
-  end
-
-  def authorize_box_access!
-    membership = @space.space_memberships.find_by(user: current_user)
-    render json: { error: "Forbidden" }, status: :forbidden unless membership
   end
 end

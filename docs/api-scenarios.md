@@ -388,39 +388,81 @@ Authorization: Bearer <token>
 
 ## Items
 
-### Create an Item in a Box
+### List Items in a Box
+
+Returns all items in a box with their tags.
 
 **Request**
 ```
-POST /api/v1/boxes/11/items
+GET /api/v1/boxes/11/items
 Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "item": {
-    "name": "Blue Jacket",
-    "description": "Size M, North Face"
-  }
-}
 ```
 
-**Response** `201 Created`
+**Response** `200 OK`
+```json
+[
+  {
+    "id": 100,
+    "name": "Blue Jacket",
+    "description": "Size M, North Face",
+    "tags": [{ "id": 3, "name": "clothing" }],
+    "photo_urls": [
+      "http://localhost:3000/rails/active_storage/blobs/redirect/.../jacket_front.jpg"
+    ],
+    "created_at": "...",
+    "updated_at": "..."
+  },
+  {
+    "id": 101,
+    "name": "Scarf",
+    "description": null,
+    "tags": [],
+    "photo_urls": [],
+    "created_at": "...",
+    "updated_at": "..."
+  }
+]
+```
+
+> Returns `403 Forbidden` if the user is not a member of the space.
+
+---
+
+### Get an Item
+
+Returns full item details including tags and signed photo URLs.
+
+**Request**
+```
+GET /api/v1/items/100
+Authorization: Bearer <token>
+```
+
+**Response** `200 OK`
 ```json
 {
   "id": 100,
   "name": "Blue Jacket",
   "description": "Size M, North Face",
-  "tags": [],
+  "tags": [
+    { "id": 3, "name": "clothing" },
+    { "id": 7, "name": "winter" }
+  ],
+  "photo_urls": [
+    "http://localhost:3000/rails/active_storage/blobs/redirect/.../jacket_front.jpg"
+  ],
   "created_at": "...",
   "updated_at": "..."
 }
 ```
 
+> Returns `403 Forbidden` if the user is not a member of the space the item belongs to.
+
 ---
 
-### Create an Item with Photos
+### Create an Item
 
-Send as `multipart/form-data` to attach one or more photos.
+Items are always created via `multipart/form-data` so that photos can be attached in the same request. Tags and photos are both optional.
 
 **Request**
 ```
@@ -429,18 +471,42 @@ Authorization: Bearer <token>
 Content-Type: multipart/form-data
 
 item[name]=Blue Jacket
-item[description]=Size M
+item[description]=Size M, North Face
 item[photos][]=@jacket_front.jpg
 item[photos][]=@jacket_back.jpg
+item[tag_ids][]=3
+item[tag_ids][]=7
+```
+
+> Tags are validated: every `tag_id` must belong to the same space as the box. An invalid tag returns `422`.
+
+**Response** `201 Created`
+```json
+{
+  "id": 100,
+  "name": "Blue Jacket",
+  "description": "Size M, North Face",
+  "tags": [
+    { "id": 3, "name": "clothing" },
+    { "id": 7, "name": "winter" }
+  ],
+  "created_at": "...",
+  "updated_at": "..."
+}
 ```
 
 ---
 
-### Update an Item (and reassign tags)
+### Update an Item
 
-Pass `tag_ids` to replace the item's tags entirely. Omit to leave tags unchanged.
+Accepts `multipart/form-data` (for adding photos) or `application/json` (for name/description/tags only).
 
-**Request**
+**Tag behaviour:**
+- Omit `tag_ids` entirely → leave existing tags unchanged
+- Send `tag_ids[]` with values → replace all tags with this set
+- Send an empty `tag_ids[]` → remove all tags
+
+**Request (JSON — update name + replace tags)**
 ```
 PATCH /api/v1/items/100
 Authorization: Bearer <token>
@@ -452,6 +518,15 @@ Content-Type: application/json
     "tag_ids": [3, 7]
   }
 }
+```
+
+**Request (multipart — add a new photo)**
+```
+PATCH /api/v1/items/100
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+item[photos][]=@new_photo.jpg
 ```
 
 **Response** `200 OK`
@@ -522,6 +597,42 @@ Content-Type: application/json
 ```json
 { "id": 9, "name": "fragile" }
 ```
+
+---
+
+### Update a Tag
+
+Rename a tag. The new name must still be unique within the space.
+
+**Request**
+```
+PATCH /api/v1/tags/9
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "tag": { "name": "handle-with-care" }
+}
+```
+
+**Response** `200 OK`
+```json
+{ "id": 9, "name": "handle-with-care" }
+```
+
+---
+
+### Delete a Tag
+
+Deletes the tag and removes it from all items it was applied to.
+
+**Request**
+```
+DELETE /api/v1/tags/9
+Authorization: Bearer <token>
+```
+
+**Response** `204 No Content`
 
 ---
 
