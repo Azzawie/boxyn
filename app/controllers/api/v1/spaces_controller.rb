@@ -8,6 +8,7 @@ class Api::V1::SpacesController < Api::V1::BaseController
 
   def show
     require_membership!
+    return if performed?
     render json: SpaceBlueprint.render(@space, view: :with_boxes)
   end
 
@@ -23,6 +24,7 @@ class Api::V1::SpacesController < Api::V1::BaseController
 
   def update
     require_admin!
+    return if performed?
     if @space.update(space_params)
       render json: SpaceBlueprint.render(@space)
     else
@@ -32,6 +34,7 @@ class Api::V1::SpacesController < Api::V1::BaseController
 
   def destroy
     require_owner!
+    return if performed?
     @space.destroy
     head :no_content
   end

@@ -4,11 +4,13 @@ class Api::V1::BoxesController < Api::V1::BaseController
 
   def index
     require_membership!
+    return if performed?
     render json: BoxBlueprint.render(@space.boxes)
   end
 
   def create
     require_membership!
+    return if performed?
     box = @space.boxes.new(box_params)
     if box.save
       render json: BoxBlueprint.render(box), status: :created
@@ -19,6 +21,7 @@ class Api::V1::BoxesController < Api::V1::BaseController
 
   def show
     authorize_box_access!
+    return if performed?
     render json: BoxBlueprint.render(@box, view: :with_items, url_helpers: url_helpers)
   end
 
@@ -26,20 +29,23 @@ class Api::V1::BoxesController < Api::V1::BaseController
     @box = Box.find_by!(qr_token: params[:qr_token])
     @space = @box.space
     authorize_box_access!
+    return if performed?
     render json: BoxBlueprint.render(@box, view: :with_items, url_helpers: url_helpers)
   end
 
   def update
     authorize_box_access!
+    return if performed?
     if @box.update(box_params)
       render json: BoxBlueprint.render(@box)
     else
-      render_error(box.errors.full_messages.join(", "))
+      render_error(@box.errors.full_messages.join(", "))
     end
   end
 
   def destroy
     authorize_box_access!
+    return if performed?
     @box.destroy
     head :no_content
   end

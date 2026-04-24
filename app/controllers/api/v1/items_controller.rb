@@ -4,6 +4,7 @@ class Api::V1::ItemsController < Api::V1::BaseController
 
   def create
     authorize_space_member!(@box.space)
+    return if performed?
     item = @box.items.new(item_params)
     if item.save
       render json: ItemBlueprint.render(item, view: :with_tags), status: :created
@@ -14,6 +15,7 @@ class Api::V1::ItemsController < Api::V1::BaseController
 
   def update
     authorize_space_member!(@item.box.space)
+    return if performed?
     tag_ids = params.dig(:item, :tag_ids)
     if @item.update(item_params)
       @item.taggings.where.not(tag_id: tag_ids).destroy_all if tag_ids
@@ -26,6 +28,7 @@ class Api::V1::ItemsController < Api::V1::BaseController
 
   def destroy
     authorize_space_member!(@item.box.space)
+    return if performed?
     @item.destroy
     head :no_content
   end

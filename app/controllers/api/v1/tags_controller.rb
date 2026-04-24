@@ -3,11 +3,13 @@ class Api::V1::TagsController < Api::V1::BaseController
 
   def index
     require_membership!
+    return if performed?
     render json: TagBlueprint.render(@space.tags)
   end
 
   def create
     require_membership!
+    return if performed?
     tag = @space.tags.new(tag_params)
     if tag.save
       render json: TagBlueprint.render(tag), status: :created

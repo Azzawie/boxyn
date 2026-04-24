@@ -3,6 +3,7 @@ class Api::V1::SpaceMembershipsController < Api::V1::BaseController
 
   def create
     require_admin!
+    return if performed?
     invited = User.find_by!(email: params[:email])
     membership = SpaceMembership.new(user: invited, space: @space, role: params[:role] || :member)
     if membership.save
@@ -14,6 +15,7 @@ class Api::V1::SpaceMembershipsController < Api::V1::BaseController
 
   def destroy
     require_admin!
+    return if performed?
     membership = @space.space_memberships.find(params[:id])
     render_error("Cannot remove the owner", :forbidden) and return if membership.owner?
     membership.destroy
